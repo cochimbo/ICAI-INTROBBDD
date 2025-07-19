@@ -1,0 +1,261 @@
+# ICAI INTROBBDD - Complete k3s Deployment Manifest
+# Apply this file with: kubectl apply -f k8s/all-in-one.yaml
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: introbbdd
+  labels:
+    name: introbbdd
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-data-pv
+  namespace: introbbdd
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  hostPath:
+    path: /opt/icai-mysql-data
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: workspace-pv
+  namespace: introbbdd
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  hostPath:
+    path: /opt/icai-workspace
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data-pvc
+  namespace: introbbdd
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: local-storage
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: workspace-pvc
+  namespace: introbbdd
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: local-storage
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-scripts
+  namespace: introbbdd
+data:
+  01-empleados.sql: |
+    DROP DATABASE IF EXISTS EMPLEADOS;
+    CREATE DATABASE EMPLEADOS;
+    ALTER DATABASE EMPLEADOS DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+    use EMPLEADOS;
+
+    DROP TABLE IF EXISTS TEMPLE;
+    DROP TABLE IF EXISTS TDEPTO;
+    DROP TABLE IF EXISTS TCENTR;
+
+    CREATE TABLE TCENTR
+    (NUMCE INTEGER NOT NULL,
+     NOMCE VARCHAR(30) NOT NULL,
+     SENAS VARCHAR(50) NOT NULL,
+     PRIMARY KEY (NUMCE))
+     ENGINE=InnoDB;
+
+
+    CREATE TABLE TDEPTO
+    (NUMDE INTEGER NOT NULL,
+     NUMCE INTEGER,
+     DIREC INTEGER NOT NULL,
+     TIDIR CHAR(1) NOT NULL,
+     PRESU DECIMAL(6,1) NOT NULL,
+     DEPDE INTEGER,
+     NOMDE VARCHAR(20) NOT NULL,
+     PRIMARY KEY (NUMDE),
+     FOREIGN KEY (NUMCE) REFERENCES TCENTR(NUMCE) ON DELETE RESTRICT )
+     ENGINE=InnoDB;
+
+
+    CREATE TABLE TEMPLE
+    (NUMEM INTEGER       NOT NULL,
+     NUMDE INTEGER       NOT NULL,
+     EXTEL INTEGER       NOT NULL,
+     FECNA DATE          NOT NULL,
+     FECIN DATE          NOT NULL,
+     SALAR DECIMAL(6,1)  NOT NULL,
+     COMIS DECIMAL(6,1),
+     NUMHI SMALLINT      NOT NULL,
+     NOMEM VARCHAR(20)   NOT NULL,
+     PRIMARY KEY (NUMEM),
+     FOREIGN KEY (NUMDE) REFERENCES TDEPTO (NUMDE) ON DELETE RESTRICT )
+     ENGINE=InnoDB;
+
+
+
+    LOAD DATA INFILE '/var/lib/mysql-files/tcentr.txt' INTO TABLE TCENTR;
+    LOAD DATA INFILE '/var/lib/mysql-files/tdepto.txt' INTO TABLE TDEPTO;
+    LOAD DATA INFILE '/var/lib/mysql-files/temple.txt' INTO TABLE TEMPLE;
+
+  02-autobuses.sql: |
+    DROP DATABASE IF EXISTS BDAUTOBUSES;
+    CREATE DATABASE IF NOT EXISTS BDAUTOBUSES;
+    USE BDAUTOBUSES;
+
+    DROP TABLE IF EXISTS PASAJEROS;
+    DROP TABLE IF EXISTS AUTOBUSES;
+    DROP TABLE IF EXISTS TRAYECTOS;
+    DROP TABLE IF EXISTS BILLETES;
+
+
+    CREATE TABLE PASAJEROS (
+      DNI varchar(10) NOT NULL,
+      NOMBRE varchar(25),
+      TLFN varchar(9),
+      PRIMARY KEY (DNI)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1; 
+
+
+    CREATE TABLE AUTOBUSES (
+      MATRIC varchar(10) NOT NULL,
+      NASIENTOS int(11) ,
+      ITV date ,
+      PRIMARY KEY (MATRIC)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
+    CREATE TABLE TRAYECTOS (
+      CODTRAY varchar(10) NOT NULL,
+      ORIG varchar(15),
+      DEST varchar(15),
+      PRECIO decimal(4,2),
+      KM int(11),
+      PRIMARY KEY (CODTRAY)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1; 
+
+
+    CREATE TABLE BILLETES (
+      CBILL int(11) NOT NULL,
+      CODTRAY char(8) NOT NULL,
+      MATRIC char(7) NOT NULL,
+      DNI char(10) NOT NULL,
+      FECHA date DEFAULT NULL,
+      HORA time,
+      PRIMARY KEY (CBILL),
+      KEY CODTRAY (CODTRAY),
+      KEY MATRIC (MATRIC),
+      KEY DNI (DNI),
+      CONSTRAINT BILLETES_ibfk_1 FOREIGN KEY (CODTRAY) REFERENCES TRAYECTOS (CODTRAY) ON DELETE CASCADE,
+      CONSTRAINT BILLETES_ibfk_2 FOREIGN KEY (MATRIC) REFERENCES AUTOBUSES (MATRIC) ON DELETE CASCADE,
+      CONSTRAINT BILLETES_ibfk_3 FOREIGN KEY (DNI) REFERENCES PASAJEROS (DNI) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1; 
+
+
+    LOAD DATA LOCAL INFILE '/autobuses/pasajeros' INTO TABLE PASAJEROS;
+    LOAD DATA LOCAL INFILE '/autobuses/autobuses' INTO TABLE AUTOBUSES;
+    LOAD DATA LOCAL INFILE '/autobuses/trayectos' INTO TABLE TRAYECTOS;
+    LOAD DATA LOCAL INFILE '/autobuses/billetes' INTO TABLE BILLETES;
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  namespace: introbbdd
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: cochimbo/introbbddicade
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "comillas"
+        - name: MYSQL_CHARSET
+          value: "utf8mb4"
+        - name: MYSQL_COLLATION
+          value: "utf8mb4_general_ci"
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+        - name: workspace
+          mountPath: /workspace
+        - name: mysql-init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+          readOnly: true
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: mysql-data
+        persistentVolumeClaim:
+          claimName: mysql-data-pvc
+      - name: workspace
+        persistentVolumeClaim:
+          claimName: workspace-pvc
+      - name: mysql-init-scripts
+        configMap:
+          name: mysql-init-scripts
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+  namespace: introbbdd
+  labels:
+    app: mysql
+spec:
+  type: NodePort
+  ports:
+  - port: 3306
+    targetPort: 3306
+    nodePort: 30306
+    protocol: TCP
+  selector:
+    app: mysql
