@@ -2,6 +2,8 @@
 
 Este proyecto ha sido migrado de Docker Compose a k3s para un mejor manejo de contenedores en entornos de Kubernetes.
 
+> 🚀 **¿Primera vez?** Consulta la [Guía de Inicio Rápido](QUICKSTART.md) para empezar inmediatamente.
+
 ## Descripción
 
 El proyecto contiene dos bases de datos MySQL:
