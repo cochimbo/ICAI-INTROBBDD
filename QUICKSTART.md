@@ -21,7 +21,19 @@ Instala k3s siguiendo la [documentación oficial](https://docs.k3s.io/installati
 
 ### 2. Desplegar
 
-**Opción A - Script Automático (Recomendado):**
+**Opción A - Helm Chart (Recomendado):**
+```bash
+# Instalar Helm si no está instalado
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# Linux/macOS
+./start-helm.sh
+
+# Windows  
+start-helm-windows.bat
+```
+
+**Opción B - Manifiestos k8s tradicionales:**
 ```bash
 # Linux/macOS
 ./start-k3s.sh
@@ -30,16 +42,13 @@ Instala k3s siguiendo la [documentación oficial](https://docs.k3s.io/installati
 start-k3s-windows.bat
 ```
 
-**Opción B - Manual:**
+**Opción C - Manual:**
 ```bash
-# Crear directorios
-mkdir -p "$HOME/workspace"
-sudo mkdir -p /opt/icai-mysql-data /opt/icai-workspace
+# Con Helm
+helm install icai-introbbdd ./icai-introbbdd --namespace introbbdd --create-namespace
 
-# Desplegar
+# Con kubectl (tradicional)
 kubectl apply -f k8s/all-in-one.yaml
-
-# Esperar a que esté listo
 kubectl wait --for=condition=available --timeout=300s deployment/mysql-deployment -n introbbdd
 ```
 
@@ -76,11 +85,15 @@ kubectl logs deployment/mysql-deployment -n introbbdd
 ### 5. Limpiar
 
 ```bash
-# Eliminar deployment
+# Con Helm
+./cleanup-helm.sh
+
+# Con manifiestos tradicionales
 ./cleanup-k3s.sh
 
 # O manual
-kubectl delete namespace introbbdd
+helm uninstall icai-introbbdd -n introbbdd  # Para Helm
+kubectl delete namespace introbbdd          # Para ambos
 ```
 
 ## 🗄️ Bases de Datos Disponibles

@@ -31,12 +31,31 @@ El proyecto contiene dos bases de datos MySQL:
 
 ## Despliegue
 
-### Linux/macOS:
+Tienes dos opciones para el despliegue:
+
+### Opción 1: Usando Helm Charts (Recomendado)
+
+**Prerrequisitos adicionales:**
+- Helm 3.x instalado: `curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash`
+
+**Linux/macOS:**
+```bash
+./start-helm.sh
+```
+
+**Windows:**
+```cmd
+start-helm-windows.bat
+```
+
+### Opción 2: Usando manifiestos k8s tradicionales
+
+**Linux/macOS:**
 ```bash
 ./start-k3s.sh
 ```
 
-### Windows:
+**Windows:**
 ```cmd
 start-k3s-windows.bat
 ```
@@ -79,10 +98,46 @@ kubectl port-forward svc/mysql-service 3306:3306 -n introbbdd
 mysql -h localhost -P 30306 -u root -pcomillas
 ```
 
+### Comandos específicos de Helm:
+
+**Ver estado del release:**
+```bash
+helm status icai-introbbdd -n introbbdd
+```
+
+**Ver valores actuales:**
+```bash
+helm get values icai-introbbdd -n introbbdd
+```
+
+**Actualizar configuración:**
+```bash
+helm upgrade icai-introbbdd ./icai-introbbdd -n introbbdd --set mysql.auth.rootPassword=nuevapass
+```
+
+**Desinstalar:**
+```bash
+helm uninstall icai-introbbdd -n introbbdd
+# O usar el script de limpieza
+./cleanup-helm.sh
+```
+
 ## Estructura del Proyecto
 
 ```
-├── k8s/                           # Manifiestos de Kubernetes
+├── icai-introbbdd/                 # Helm Chart
+│   ├── Chart.yaml                  # Metadatos del chart
+│   ├── values.yaml                 # Valores de configuración
+│   ├── templates/                  # Plantillas de Kubernetes
+│   │   ├── namespace.yaml          # Namespace del proyecto
+│   │   ├── persistent-volume.yaml  # Volúmenes persistentes
+│   │   ├── persistent-volume-claim.yaml # Claims de volúmenes
+│   │   ├── configmap.yaml          # Scripts de inicialización
+│   │   ├── deployment.yaml         # Despliegue de MySQL
+│   │   ├── service.yaml            # Servicio de MySQL
+│   │   └── _helpers.tpl            # Plantillas auxiliares
+│   └── README.md                   # Documentación del Helm Chart
+├── k8s/                           # Manifiestos de Kubernetes (legacy)
 │   ├── namespace.yaml             # Namespace del proyecto
 │   ├── mysql-pv.yaml              # Volúmenes persistentes
 │   ├── mysql-pvc.yaml             # Claims de volúmenes persistentes
@@ -92,8 +147,12 @@ mysql -h localhost -P 30306 -u root -pcomillas
 ├── Empleados/                     # Datos de la BD EMPLEADOS
 ├── Autobuses/                     # Datos de la BD BDAUTOBUSES
 ├── Dockerfile                     # Imagen Docker (aún usada por k3s)
-├── start-k3s.sh                   # Script de despliegue para Linux/macOS
-├── start-k3s-windows.bat          # Script de despliegue para Windows
+├── start-helm.sh                  # Script de despliegue Helm para Linux/macOS
+├── start-helm-windows.bat         # Script de despliegue Helm para Windows
+├── cleanup-helm.sh                # Script de limpieza Helm
+├── test-helm-chart.sh             # Script de testing del Helm Chart
+├── start-k3s.sh                   # Script de despliegue k8s para Linux/macOS
+├── start-k3s-windows.bat          # Script de despliegue k8s para Windows
 ├── start-container.sh             # Script original Docker (legacy)
 └── start-container-windows.bat    # Script original Docker (legacy)
 ```
