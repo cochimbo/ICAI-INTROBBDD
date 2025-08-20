@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  namespace: {{ include "icai-introbbdd.namespace" . }}
+  labels:
+    {{- include "icai-introbbdd.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "icai-introbbdd.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "icai-introbbdd.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: mysql
+        image: "{{ .Values.mysql.image.repository }}:{{ .Values.mysql.image.tag }}"
+        imagePullPolicy: {{ .Values.mysql.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.mysql.ports.containerPort }}
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: {{ .Values.mysql.auth.rootPassword | quote }}
+        - name: MYSQL_CHARSET
+          value: {{ .Values.mysql.charset | quote }}
+        - name: MYSQL_COLLATION
+          value: {{ .Values.mysql.collation | quote }}
+        volumeMounts:
+        {{- if .Values.persistence.mysqlData.enabled }}
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+        {{- end }}
+        {{- if .Values.persistence.workspace.enabled }}
+        - name: workspace
+          mountPath: /workspace
+        {{- end }}
+        {{- if .Values.configMap.enabled }}
+        - name: mysql-init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+          readOnly: true
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+      volumes:
+      {{- if .Values.persistence.mysqlData.enabled }}
+      - name: mysql-data
+        persistentVolumeClaim:
+          claimName: mysql-data-pvc
+      {{- end }}
+      {{- if .Values.persistence.workspace.enabled }}
+      - name: workspace
+        persistentVolumeClaim:
+          claimName: workspace-pvc
+      {{- end }}
+      {{- if .Values.configMap.enabled }}
+      - name: mysql-init-scripts
+        configMap:
+          name: mysql-init-scripts
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

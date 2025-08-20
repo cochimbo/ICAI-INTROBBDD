@@ -1,0 +1,85 @@
+# ICAI INTROBBDD Configuration Values
+
+# Global settings
+global:
+  namespace: introbbdd
+
+# MySQL Configuration
+mysql:
+  # Docker image to use
+  image:
+    repository: cochimbo/introbbddicade
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  # MySQL root password
+  auth:
+    rootPassword: comillas
+    
+  # MySQL charset and collation
+  charset: utf8mb4
+  collation: utf8mb4_general_ci
+
+  # Container ports
+  ports:
+    containerPort: 3306
+
+# Service configuration
+service:
+  type: NodePort
+  port: 3306
+  targetPort: 3306
+  nodePort: 30306
+
+# Resource configuration
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
+
+# Replica configuration
+replicaCount: 1
+
+# Persistent Volume configuration
+persistence:
+  mysqlData:
+    enabled: true
+    size: 5Gi
+    storageClass: local-storage
+    accessMode: ReadWriteOnce
+    hostPath: /opt/icai-mysql-data
+    reclaimPolicy: Retain
+    
+  workspace:
+    enabled: true
+    size: 2Gi
+    storageClass: local-storage
+    accessMode: ReadWriteOnce
+    hostPath: /opt/icai-workspace
+    reclaimPolicy: Retain
+
+# ConfigMap for database initialization scripts
+configMap:
+  enabled: true
+  # The SQL scripts will be mounted to /docker-entrypoint-initdb.d
+
+# Labels and selectors
+labels:
+  app: mysql
+  component: database
+
+# Security context (optional)
+securityContext:
+  enabled: false
+
+# Node selector (optional)
+nodeSelector: {}
+
+# Tolerations (optional)
+tolerations: []
+
+# Affinity (optional)
+affinity: {}

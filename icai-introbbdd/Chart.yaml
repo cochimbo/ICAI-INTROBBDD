@@ -1,0 +1,21 @@
+apiVersion: v2
+name: icai-introbbdd
+description: Helm chart for ICAI INTROBBDD - MySQL databases for database introduction course
+
+# Application chart for deploying MySQL with EMPLEADOS and BDAUTOBUSES databases
+type: application
+
+# Chart version
+version: 0.1.0
+
+# Application version - matches the MySQL version in the container
+appVersion: "latest"
+
+keywords:
+  - mysql
+  - database
+  - education
+  - icai
+home: https://github.com/cochimbo/ICAI-INTROBBDD
+maintainers:
+  - name: cochimbo

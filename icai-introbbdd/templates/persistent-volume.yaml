@@ -1,0 +1,39 @@
+{{- if .Values.persistence.mysqlData.enabled }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-data-pv
+  namespace: {{ include "icai-introbbdd.namespace" . }}
+  labels:
+    {{- include "icai-introbbdd.labels" . | nindent 4 }}
+    volume: mysql-data
+spec:
+  capacity:
+    storage: {{ .Values.persistence.mysqlData.size }}
+  accessModes:
+    - {{ .Values.persistence.mysqlData.accessMode }}
+  persistentVolumeReclaimPolicy: {{ .Values.persistence.mysqlData.reclaimPolicy }}
+  storageClassName: {{ .Values.persistence.mysqlData.storageClass }}
+  hostPath:
+    path: {{ .Values.persistence.mysqlData.hostPath }}
+---
+{{- end }}
+{{- if .Values.persistence.workspace.enabled }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: workspace-pv
+  namespace: {{ include "icai-introbbdd.namespace" . }}
+  labels:
+    {{- include "icai-introbbdd.labels" . | nindent 4 }}
+    volume: workspace
+spec:
+  capacity:
+    storage: {{ .Values.persistence.workspace.size }}
+  accessModes:
+    - {{ .Values.persistence.workspace.accessMode }}
+  persistentVolumeReclaimPolicy: {{ .Values.persistence.workspace.reclaimPolicy }}
+  storageClassName: {{ .Values.persistence.workspace.storageClass }}
+  hostPath:
+    path: {{ .Values.persistence.workspace.hostPath }}
+{{- end }}
