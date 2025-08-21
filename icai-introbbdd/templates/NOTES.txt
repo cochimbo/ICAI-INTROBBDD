@@ -1,0 +1,39 @@
+🚀 ICAI INTROBBDD MySQL has been deployed successfully!
+
+📋 Connection Information:
+  - Namespace: {{ include "icai-introbbdd.namespace" . }}
+  - MySQL Host: localhost (or your k3s node IP)
+  - MySQL Port: {{ .Values.service.nodePort }}
+  - MySQL User: root
+  - MySQL Password: {{ .Values.mysql.auth.rootPassword }}
+  - Databases: EMPLEADOS, BDAUTOBUSES
+
+🔍 Useful Commands:
+  
+  Check pod status:
+    kubectl get pods -n {{ include "icai-introbbdd.namespace" . }}
+  
+  View logs:
+    kubectl logs -f deployment/mysql-deployment -n {{ include "icai-introbbdd.namespace" . }}
+  
+  Port forward (if needed):
+    kubectl port-forward svc/mysql-service {{ .Values.service.port }}:{{ .Values.service.port }} -n {{ include "icai-introbbdd.namespace" . }}
+  
+  Connect to MySQL directly:
+    kubectl exec -it deployment/mysql-deployment -n {{ include "icai-introbbdd.namespace" . }} -- mysql -u root -p{{ .Values.mysql.auth.rootPassword }}
+  
+  Connect using external MySQL client:
+    mysql -h localhost -P {{ .Values.service.nodePort }} -u root -p{{ .Values.mysql.auth.rootPassword }}
+
+📁 Workspace:
+  Your workspace is available at /workspace inside the container
+  {{- if .Values.persistence.workspace.enabled }}
+  Host path: {{ .Values.persistence.workspace.hostPath }}
+  {{- end }}
+
+🗄️ Databases Available:
+  - EMPLEADOS: Contains tables TCENTR, TDEPTO, TEMPLE (centers, departments, employees)
+  - BDAUTOBUSES: Contains tables PASAJEROS, AUTOBUSES, TRAYECTOS, BILLETES (passengers, buses, routes, tickets)
+
+To remove the deployment:
+  helm uninstall {{ .Release.Name }} -n {{ include "icai-introbbdd.namespace" . }}

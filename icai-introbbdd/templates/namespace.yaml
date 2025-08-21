@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "icai-introbbdd.namespace" . }}
+  labels:
+    {{- include "icai-introbbdd.labels" . | nindent 4 }}
+    name: {{ include "icai-introbbdd.namespace" . }}
